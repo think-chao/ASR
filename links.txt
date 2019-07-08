@@ -1,0 +1,2 @@
+https://github.com/igormq/ctc_tensorflow_example
+https://github.com/meijieru/crnn.pytorch/blob/master/train.py
