@@ -10,11 +10,16 @@
 """
 
 data_root = './data'
+batch_size = 1
+lr = 0.001
+epoch = 50
+
+cur_id = 0
 
 space = '<space>'
 space_index = 0
 
 first_index = ord('a')-1
 
-num_classes = ord('z') - ord('a') + 1 + 1  # 26char + blank or space
+num_classes = ord('z') - ord('a') + 1 + 1 + 1  # 26char + blank or space
 

@@ -29,12 +29,15 @@ def gen_next_batch(cur_id=0, batch_size=1):
     batch_audio_name = all_audio[cur_id:cur_id + batch_size]
 
     inputs = []
+    labels = []
     for file in batch_audio_name:
         fs, audio = wav.read(os.path.join(config.data_root, file))
         mfcc_feature = mfcc(audio)
-        label = get_target(os.path.join(config.data_root, file.split('.')[0] + '.txt'))
+        labels.append(get_target(os.path.join(config.data_root, file.split('.')[0] + '.txt')))
         inputs.append(mfcc_feature)
     inputs = np.array(inputs)
+    sparse_label = sparse_tuple_from(labels)
+    print(sparse_label)
 
 
 def get_target(file_name):
@@ -47,30 +50,43 @@ def get_target(file_name):
         targets = np.hstack([config.space if x == '' else list(x) for x in targets])
         targets = np.asarray([config.space_index if x == config.space else ord(x) - config.first_index
                               for x in targets])
-        print(targets)
-    os._exit(0)
-
-    return _
+    return targets
 
 
 def sparse_tuple_from(sequences, dtype=np.int32):
-    pass
+    """Create a sparse representention of x.
+        Args:
+            sequences: a list of lists of type dtype where each element is a sequence
+        Returns:
+            A tuple with (indices, values, shape)
+        """
+    indices = []
+    values = []
 
+    for n, seq in enumerate(sequences):
+        indices.extend(zip([n] * len(seq), range(len(seq))))
+        values.extend(seq)
 
-def test():
-    import torch
-    from torch.autograd import Variable
-    from warpctc_pytorch import CTCLoss
-    ctc_loss = CTCLoss()
-    # expected shape of seqLength x batchSize x alphabet_size
-    probs = torch.FloatTensor([[[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]]]).transpose(0, 1).contiguous()
-    labels = Variable(torch.IntTensor([1, 2]))
-    label_sizes = Variable(torch.IntTensor([2]))
-    probs_sizes = Variable(torch.IntTensor([2]))
-    probs = Variable(probs, requires_grad=True)  # tells autograd to compute gradients for probs
-    cost = ctc_loss(probs, labels, probs_sizes, label_sizes)
-    cost.backward()
-    print('PyTorch bindings for Warp-ctc')
+    indices = np.asarray(indices, dtype=np.int64)
+    values = np.asarray(values, dtype=dtype)
+    shape = np.asarray([len(sequences), np.asarray(indices).max(0)[1] + 1], dtype=np.int64)
+    return indices, values, shape
+
+#
+# def test():
+#     import torch
+#     from torch.autograd import Variable
+#     from warpctc_pytorch import CTCLoss
+#     ctc_loss = CTCLoss()
+#     # expected shape of seqLength x batchSize x alphabet_size
+#     probs = torch.FloatTensor([[[0.1, 0.6, 0.1, 0.1, 0.1], [0.1, 0.1, 0.6, 0.1, 0.1]]]).transpose(0, 1).contiguous()
+#     labels = Variable(torch.IntTensor([1, 2]))
+#     label_sizes = Variable(torch.IntTensor([2]))
+#     probs_sizes = Variable(torch.IntTensor([2]))
+#     probs = Variable(probs, requires_grad=True)  # tells autograd to compute gradients for probs
+#     cost = ctc_loss(probs, labels, probs_sizes, label_sizes)
+#     cost.backward()
+#     print('PyTorch bindings for Warp-ctc')
 
 
 gen_next_batch()
